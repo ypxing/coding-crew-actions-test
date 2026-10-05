@@ -1,0 +1,30 @@
+import pytest
+
+from textstats import char_count, top_words, word_count, words
+
+
+def test_words_lowercases_and_strips_punctuation() -> None:
+    assert words("Hello, world! It's here.") == ["hello", "world", "it's", "here"]
+
+
+def test_word_count_empty() -> None:
+    assert word_count("") == 0
+
+
+def test_word_count() -> None:
+    assert word_count("one two  three\nfour") == 4
+
+
+def test_char_count_with_and_without_spaces() -> None:
+    assert char_count("a b\tc") == 5
+    assert char_count("a b\tc", include_spaces=False) == 3
+
+
+def test_top_words_orders_by_count_then_alphabetically() -> None:
+    assert top_words("b a b c a b", n=2) == [("b", 3), ("a", 2)]
+    assert top_words("z y x", n=2) == [("x", 1), ("y", 1)]
+
+
+def test_top_words_rejects_negative_n() -> None:
+    with pytest.raises(ValueError):
+        top_words("a", n=-1)
