@@ -1,0 +1,1 @@
+{"test": "uv run pytest", "lint": "uv run ruff check .", "typecheck": "uv run mypy .", "install": null, "env": null, "credential_target": null, "coverage": null, "integration": null}
