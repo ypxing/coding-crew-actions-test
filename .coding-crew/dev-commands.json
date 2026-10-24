@@ -2,7 +2,7 @@
   "test": "uv run pytest",
   "lint": "uv run ruff check .",
   "typecheck": "uv run mypy .",
-  "install": "uv sync",
+  "install": "pipx install uv && uv sync",
   "env": null,
   "registry_auth": null,
   "coverage": null,
