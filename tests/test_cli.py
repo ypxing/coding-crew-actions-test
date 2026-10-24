@@ -52,3 +52,44 @@ def test_subprocess(path: Path) -> None:
     )
     assert r.returncode == 0
     assert r.stdout == format_report(TEXT) + "\n"
+
+
+def _assert_clean_error(rc: int, cap: pytest.CaptureFixture[str]) -> None:
+    out = cap.readouterr()
+    assert rc == 1
+    assert out.out == ""
+    assert out.err.startswith("textstats: error:")
+    assert "Traceback" not in out.err
+
+
+def test_missing_file(tmp_path: Path, capsys: pytest.CaptureFixture[str]) -> None:
+    _assert_clean_error(main([str(tmp_path / "nope.txt")]), capsys)
+
+
+def test_directory(tmp_path: Path, capsys: pytest.CaptureFixture[str]) -> None:
+    _assert_clean_error(main([str(tmp_path)]), capsys)
+
+
+def test_invalid_utf8(tmp_path: Path, capsys: pytest.CaptureFixture[str]) -> None:
+    p = tmp_path / "bad.txt"
+    p.write_bytes(b"\xff\xfe\xfa")
+    _assert_clean_error(main([str(p)]), capsys)
+
+
+def test_negative_top(
+    tmp_path: Path, capsys: pytest.CaptureFixture[str], monkeypatch: pytest.MonkeyPatch
+) -> None:
+    def boom(*a: object, **k: object) -> str:
+        raise AssertionError("file was read")
+
+    monkeypatch.setattr(Path, "read_text", boom)
+    with pytest.raises(SystemExit) as e:
+        main([str(tmp_path / "x.txt"), "--top", "-1"])
+    assert e.value.code == 2
+    assert "usage" in capsys.readouterr().err.lower()
+
+
+def test_non_integer_top(path: Path) -> None:
+    with pytest.raises(SystemExit) as e:
+        main([str(path), "--top", "abc"])
+    assert e.value.code == 2
