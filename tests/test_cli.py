@@ -1,3 +1,4 @@
+import os
 import subprocess
 import sys
 from pathlib import Path
@@ -33,16 +34,17 @@ def test_default_top_is_three(path: Path, capsys: pytest.CaptureFixture[str]) ->
     assert len(out) == 3
 
 
-def test_utf8_decoding(
-    tmp_path: Path, capsys: pytest.CaptureFixture[str], monkeypatch: pytest.MonkeyPatch
-) -> None:
-    import locale
-
-    monkeypatch.setattr(locale, "getpreferredencoding", lambda *a, **k: "ascii")
+def test_utf8_decoding(tmp_path: Path) -> None:
     p = tmp_path / "u.txt"
     p.write_text("café naïve", encoding="utf-8")
-    assert main([str(p)]) == 0
-    assert capsys.readouterr().out == format_report("café naïve") + "\n"
+    env = {**os.environ, "LC_ALL": "C", "PYTHONUTF8": "0", "PYTHONCOERCECLOCALE": "0"}
+    env.pop("PYTHONIOENCODING", None)
+    r = subprocess.run(
+        [sys.executable, "-m", "textstats", str(p)],
+        capture_output=True, env=env, check=False,
+    )
+    assert r.returncode == 0, r.stderr
+    assert r.stdout.decode("utf-8") == format_report("café naïve") + "\n"
 
 
 def test_subprocess(path: Path) -> None:
